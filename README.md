@@ -1,3 +1,10 @@
+# История изменений
+
+| Версия  | Дата       | Описание изменений                                     |
+|---------|------------|--------------------------------------------------------|
+| 0.09.01 | 2025-03-21 | MVP. Добавлен каталог для хранение диаграмм на github. |
+| 0.09.00 | 2023-03-20 | Версия для Jupyter notebook                            |
+
 ### Project structure  
 ./diagrams - directory with diagram description and result draw.io 
 
@@ -7,7 +14,6 @@
 pip install ipython
 
 pip install re
-
 
 git commit -m "2025-03-21 init python drawio"
 
