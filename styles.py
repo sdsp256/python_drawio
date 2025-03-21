@@ -1,205 +1,125 @@
-# This is a sample Python script.
+# задаем стили для объектов
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import re
+from IPython.display import display, HTML
 
-
-# 2025-03-20 no blocks only lanes
-
-import xml.etree.ElementTree as ET
-
-GEOMETRY_DEF_STR = "y=20;width=120;height=60;label=;text=";
-
-
-def parse_style_to_dict(style_string: str) -> dict:
-    pattern = r'([^=;]+)=([^;]+)'
-    matches = re.findall(pattern, style_string)
-    attr_dict = {key.strip(): value.strip() for key, value in matches}
-    return attr_dict
-
-
-def dict_to_string(attr_dict: dict) -> str:
-    return ";".join([f'{k}={v}' for k, v in attr_dict.items()]) + ";"
-
-
-def parse_style(style_str):
-    # Находит все пары ключ=значение, игнорируя пробелы и табуляции вокруг
-    style_dict = dict(re.findall(r'\s*([^=;\s]+)\s*=\s*([^;]*)', style_str))
-
-    # Добавление всех отсутствующих ключей с пустыми значениями (если есть)
-    keys = re.findall(r'\s*([^=;\s]+)\s*=', style_str)
-    for key in keys:
-        if key not in style_dict:
-            style_dict[key] = ''
-
-    return style_dict
-
-
-def merge_styles(styles):
-    merged_dict = {}
-    merged_flags = []
-
-    for style in styles:
-        for part in style.strip(';').split(';'):
-            if '=' in part:
-                k, v = part.split('=', 1)
-                merged_dict[k] = v
-            elif part:
-                merged_flags.append(part)
-
-    # Удаляем дублирующиеся флаги, сохраняем порядок
-    merged_flags = list(dict.fromkeys(merged_flags))
-
-    # Собираем финальную строку
-    parts = merged_flags + [f'{k}={v}' for k, v in merged_dict.items()]
-    return ';'.join(parts) + ';'
-
-
-def create_cell(root, cell_id, value, style, geometry, parent, label_value=""):
-    """Создание ячейки с блоком и подписью в нижнем углу."""
-
-    # Основной блок (vertex)
-    cell = ET.SubElement(root, "mxCell", id=cell_id, value=value, style=style, vertex="1", parent=parent)
-    ET.SubElement(cell, "mxGeometry",
-                  x=geometry.get("x", "0"),
-                  y=geometry["y"],
-                  width=geometry["width"],
-                  height=geometry["height"],
-                  **{"as": "geometry"})
-
-    if label_value != "":
-        # Подпись (label) — вложенная mxCell
-        label_style = "whiteSpace=wrap;fontSize=9;fontStyle=0;fillColor=#222222;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;"
-        label_cell = ET.SubElement(root, "mxCell",
-                                   id=f"label_{cell_id}",
-                                   value=label_value,
-                                   style=label_style,
-                                   vertex="1", connectable="0", parent=cell_id)
-
-        # Геометрия метки — снизу блока (например, высота метки 12px, смещение 2px)
-        label_height = 12
-        offset = 0
-        label_x = 0  # по левому краю блока
-        label_y = str(float(geometry["height"]) - label_height - offset)
-        ET.SubElement(label_cell, "mxGeometry",
-                      x=str(label_x),
-                      y=str(label_y),
-                      width="50",  # geometry["width"],
-                      height=str(label_height),
-                      **{"as": "geometry"})
-
-    return cell
-
-
-def generate_lane(root, lane_id, lane_info):
-    """Генерация лэйна с блоками."""
-
-    LANE_STYLE_DEF = "swimlane;html=1;startSize=40;horizontal=0"
-
-    lane_params = merge_styles(
-        [LANE_STYLE_DEF, lane_info['lane_params']]) if 'lane_params' in lane_info else LANE_STYLE_DEF
-
-    lane_cell = ET.SubElement(root, "mxCell", id=lane_id, value=lane_id, style=lane_params, vertex="1", parent="header")
-
-    lane_geom = parse_style(lane_info["geometry"])
-
-    ET.SubElement(lane_cell, "mxGeometry", y=lane_geom["y"],
-                  width=lane_geom["width"],
-                  height=lane_geom["height"], **{"as": "geometry"})
-
-    for block_id, block_param in lane_info["blocks"].items():
-        # генерацпия блоков
-
-        lane_block_param = lane_info["block_params"] if "block_params" in lane_info else ""
-
-        block_param_merged = merge_styles([Style.DEF, GEOMETRY_DEF_STR, lane_block_param, block_param])
-
-        print(f'''* {lane_id:<15}:{block_id:<25}:{block_param_merged}"''')
-
-        param = parse_style(block_param_merged)
-
-        create_cell(root, block_id, block_id + param["text"], block_param_merged,
-                    {"x": param["x"],
-                     "y": param["y"],
-                     "width": param["width"],
-                     "height": param["height"]},
-                    lane_id, param["label"])
-
-
-def generate_connections(root, connections):
-    """Создание связей между блоками с автоматическим генерированием id."""
-    for index, conn in enumerate(connections, start=1):
-        conn_id = f"link_{index}"
-
-        _style = conn[3] if conn[3] else "whiteSpace=wrap;rounded=0;jettySize=auto;html=1;"
-
-        conn_cell = ET.SubElement(root, "mxCell", id=conn_id,
-                                  style=_style,
-                                  edge="1", source=conn[0], target=conn[1], parent="1")
-        ET.SubElement(conn_cell, "mxGeometry", relative="1", **{"as": "geometry"})
-
-        # Генерация ID для метки связи
-
-        label_id = f"{conn_id}_label"
-        style_dict = parse_style_to_dict(_style)
-
-        _color = style_dict['strokeColor']
-
-        label_cell = ET.SubElement(root, "mxCell", id=label_id, value=conn[2],
-                                   style=f'''whiteSpace=wrap;fontSize=9;fontColor={_color};labelBackgroundColor=#ffffff77;fontStyle=2''',
-                                   vertex="1",
-                                   connectable="0", parent=conn_id)
-
-        geometry = ET.SubElement(label_cell, "mxGeometry", x="0", y="2", relative="1", **{"as": "geometry"})
-        ET.SubElement(geometry, "mxPoint", **{"as": "offset"})
-
-
-def generate_bpmn_drawio(diagram_name, lane_dict, connections):
-    """Генерация всей диаграммы в формате Draw.io (BPMN)."""
-    mxfile = ET.Element("mxfile", host="app.diagrams.net")
-    diagram = ET.SubElement(mxfile, "diagram", name="Diagram 1", id="diagram1")
-    mxGraphModel = ET.SubElement(diagram, "mxGraphModel", dx="1000", dy="1000", grid="1", gridSize="10", guides="1",
-                                 tooltips="1", connect="1", arrows="1", fold="1", page="1", pageScale="1",
-                                 pageWidth="827", pageHeight="1169", math="0", shadow="0")
-
-    root = ET.SubElement(mxGraphModel, "root")
-
-    ET.SubElement(root, "mxCell", id="0")
-    ET.SubElement(root, "mxCell", id="1", parent="0")
-
-    # Генерация заголовка в пул
-    header_cell = ET.SubElement(root, "mxCell", id="header", value=diagram_name,
-                                style="swimlane;html=1;startSize=20;horizontal=1;", vertex="1", connectable="0",
-                                parent="1")
-    header_geometry = ET.SubElement(header_cell, "mxGeometry", x="0", y="30", width=BPMN_WIDTH, height="20",
-                                    relative="1", **{"as": "geometry"})
-
-    # Генерация лэйнов
-    for lane_key, lane_value in bpmn_lanes.items():
-        generate_lane(root, lane_key, lane_value)
-
-    # Генерация связей
-    generate_connections(root, connections)
-
-    return ET.tostring(mxfile, encoding="unicode", method="xml")
-
-
-_fname_in = "10.01 Sample Supplier operation"
-_fname_out = "10.01 Sample Supplier operation"
 
 BPMN_WIDTH = "820"
+GEOMETRY_DEF = "y=20;width=120;height=60;label="; 
 
 
-xml_output = generate_bpmn_drawio(_fname_out, bpmn_lanes, connections)
+class Style:
+    # Block styles
+    BLUE 	= 'rounded=1;arcSize=11;whiteSpace=wrap;html=1;fillColor=#3B8AE6;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;'
+    MAROON 	= 'rounded=1;arcSize=11;whiteSpace=wrap;html=1;fillColor=#800000;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;'
+    GRAY   	= 'rounded=1;arcSize=11;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;'
+    CHERRY 	= 'rounded=1;arcSize=11;whiteSpace=wrap;html=1;fillColor=#b11e42;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;'
+    BLACK 	= 'rounded=1;arcSize=7;whiteSpace=wrap;html=1;fillColor=#000000;fontColor=light-dark(#ffffff, #ededed);strokeColor=none;'
+    DEF 	= 'rounded=1;arcSize=11;whiteSpace=wrap;html=1;'
+    LABEL 	= "rounded=1;arcSize=5;whiteSpace=wrap;html=1;strokeColor=none;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#FFFFFF;fillColor=#4D4D9D"
 
-with open(_fname_out, "w", encoding="utf-8") as file:
-    file.write(xml_output)
+    # Line styles
+    LINE_DOTTED = "rounded=0jettySize=auto;html=1;dashed=1;dashPattern=8 8;startArrow=none;startFill=0;strokeColor=#555555;"
+    LINE_LES 	= "rounded=0jettySize=auto;html=1;dashed=1;dashPattern=2 2;startArrow=none;startFill=0;strokeColor=#b11e42;"
+    LINE_DEF  	= "strokeColor=#222222;"
+    LINE_BUS  	= "strokeColor=#222222;edgeStyle=elbowEdgeStyle"
+    LINE_TEXT	= "whiteSpace=wrap;html=1;strokeColor=#555555;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=10;fontColor=#555555;labelBackgroundColor=default;fontStyle=2"
 
-print(f"\n\nDraw.io [{_fname_out}]")
+    def __str__(self):
+        return self._get_styles_as_string()
 
+    def __repr__(self):
+        return self._get_styles_as_string()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    def _get_styles_as_string(self):
+        result = "Стили класса Style:\n"
+        for attr in dir(self):
+            if not attr.startswith("__") and not callable(getattr(self, attr)):
+                result += f"{attr}: {getattr(self, attr)}\n"
+        return result.strip()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    def _extract_color(self, style_str, key, default="#000000"):
+        """Извлекает цвет по ключу: fillColor, fontColor, strokeColor"""
+        pattern = rf"{key}=([^;]+)"
+        match = re.search(pattern, style_str)
+        if match:
+            value = match.group(1)
+            if value == "none":
+                return "transparent"
+            if value.startswith("light-dark("):
+                return value.split("(")[1].split(",")[0].strip()
+            return value
+        return default
+
+    def _extract_dash_pattern(self, style_str):
+        """Извлекает dashPattern для линий, если оно есть"""
+        pattern = r"dashPattern=([\d ]+)"
+        match = re.search(pattern, style_str)
+        if match:
+            return match.group(1)
+        return None
+
+    def to_html_table(self):
+        block_rows, line_rows = "", ""
+        for attr in dir(self):
+            if attr.startswith("__") or callable(getattr(self, attr)):
+                continue
+
+            style_str = getattr(self, attr)
+            fill = self._extract_color(style_str, "fillColor", "#FFFFFF")
+            font = self._extract_color(style_str, "fontColor", "#000000")
+            stroke = self._extract_color(style_str, "strokeColor", "#000000")
+            dash_pattern = self._extract_dash_pattern(style_str)
+
+            # Блочный стиль — визуализация как прямоугольник
+            block_cell_style = f"background:{fill}; color:{font}; padding:5px; border-radius:5px; border:2px solid {stroke};"
+            block_preview = f'<div style="{block_cell_style}">{attr}</div>'
+
+            # Линия — отрисовка line с dashPattern и цветом
+            line_preview = f'<div style="height:2px; background:{stroke}; margin:4px 0;'
+            if dash_pattern:
+                dash_values = dash_pattern.split()
+                line_preview += f'background-image: repeating-linear-gradient(to right, {stroke}, {stroke} {dash_values[0]}px, transparent {dash_values[0]}px, transparent {dash_values[1]}px);'
+            line_preview += '"></div>'
+
+            # Добавляем в соответствующий столбец
+            if "edgeStyle" in style_str or "strokeColor" in style_str and "fillColor" not in style_str:
+                # Линейный стиль
+                line_rows += f"""
+                    <tr>
+                        <td><b>{attr}</b></td>
+                        <td>{line_preview}</td>
+                        <td style="font-family:monospace; font-size:11px;">{style_str}</td>
+                        <td>{stroke}</td>
+                        <td>{dash_pattern if dash_pattern else "solid"}</td>
+                    </tr>
+                """
+            else:
+                # Блочный стиль
+                block_rows += f"""
+                    <tr>
+                        <td><b>{attr}</b></td>
+                        <td>{block_preview}</td>
+                        <td style="font-family:monospace; font-size:11px;">{style_str}</td>
+                        <td>{fill}</td>
+                        <td>{stroke}</td>
+                    </tr>
+                """
+
+        html = f"""
+            <h3>All Styles</h3>
+            <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-family:sans-serif; font-size:13px;">
+                <tr style="background:#f0f0f0;">
+                    <th>Style Name</th>
+                    <th>Preview</th>
+                    <th>Style String</th>
+                    <th>Fill Color</th>
+                    <th>Stroke Color</th>
+                    <th>Dash Pattern</th>
+                </tr>
+                {block_rows}
+                {line_rows}
+            </table>
+        """
+        display(HTML(html))
+
