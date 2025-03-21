@@ -41,8 +41,8 @@ create drawio in  ./diagrams - directory with diagram configure and result drawi
 
 #### 5. push changes after diagram created or modified   
 ```
-git commit -a new_diagram_name.py  
-git commit -a new_diagram_name.drawio  
+git commit -a ./diagrams/new_diagram_name.py  
+git commit -a ./diagrams/new_diagram_name.drawio  
 git commit -m -a "2025-03-21 new new_diagram_name added"
 ```
 
