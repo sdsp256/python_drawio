@@ -193,7 +193,7 @@ if __name__ == '__main__':
 
     diagram_header = diagram.DIAGRAM_NAME
 
-    file_out = f"./diagrams/AGK_2025/d_{diagram_header}"
+    file_out = f"./diagrams/AGK_2025/d_{diagram_header}.drawio"
 
 
     xml_output = generate_bpmn_drawio(diagram_header, diagram.draw['bpmn_lanes'], diagram.draw['connections'])
