@@ -221,10 +221,8 @@ def main(diagram_path):
     BPMN_WIDTH = drawio['BPMN_WIDTH']
     
     diagram_header = diagram.DIAGRAM_NAME
-    
+   
     file_out = '\\'.join(module_name.split('.')[:-1] + [f"d_{diagram_header}.drawio"])
-
-    # Предполагается, что функция generate_bpmn_drawio определена где-то в коде
     
     xml_output = generate_bpmn_drawio(diagram_header, drawio)
 
