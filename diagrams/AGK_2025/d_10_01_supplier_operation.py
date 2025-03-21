@@ -2,6 +2,7 @@ import styles
 Style = styles.Style()
 
 BPMN_WIDTH = "820"
+DIAGRAM_NAME = "10.01 Sample Supplier operation"
 
 draw = {
   "bpmn_lanes" : {
