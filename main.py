@@ -93,7 +93,7 @@ def create_cell(root, cell_id, value, style, geometry, parent, label_value=""):
 
 
 def generate_lane(root, lane_id, lane_info):
-    """Генерация лэйна с блоками."""
+    '''Генерация лэйна с блоками'''
 
     LANE_STYLE_DEF = "swimlane;html=1;startSize=40;horizontal=0"
 
@@ -109,7 +109,7 @@ def generate_lane(root, lane_id, lane_info):
                   height=lane_geom["height"], **{"as": "geometry"})
 
     for block_id, block_param in lane_info["blocks"].items():
-        # генерацпия блоков
+        # генерация блоков
 
         lane_block_param = lane_info["block_params"] if "block_params" in lane_info else ""
 
