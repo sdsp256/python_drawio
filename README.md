@@ -17,6 +17,7 @@ git clone https://github.com/sdsp256/python_drawio
 
 git branch -M main
 git remote add origin https://github.com/sdsp256/python_drawio.git
+git remote set-url origin git@github.com:sdsp256/python_drawio.git
 git push -u origin main
 
 #### 3. run drawio gnerator 
