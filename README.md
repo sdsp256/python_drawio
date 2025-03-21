@@ -36,11 +36,14 @@ python main.py
 ```
 
 #### 4. create or modify diagram 
-./diagrams - directory with diagram description and result draw.io 
+create drawio in  ./diagrams - directory with diagram configure and result drawio files 
 
-#### 5. push after diagram created or modified 
+
+#### 5. push changes after diagram created or modified   
 ```
-git commit -m -a "2025-03-21 new diagram_name created"
+git commit -a new_diagram_name.py  
+git commit -a new_diagram_name.drawio  
+git commit -m -a "2025-03-21 new new_diagram_name added"
 ```
 
 #### 6. add row in table on top of document with notice 
