@@ -2,6 +2,7 @@
 
 import xml.etree.ElementTree as ET
 import re
+import argparse
 
 
 import styles
@@ -154,8 +155,11 @@ def generate_connections(root, connections):
         ET.SubElement(geometry, "mxPoint", **{"as": "offset"})
 
 
-def generate_bpmn_drawio(diagram_name, bpmn_lanes, connections):
+def generate_bpmn_drawio(diagram_name, drawio):
     """Генерация всей диаграммы в формате Draw.io (BPMN)."""
+
+    bpmn_lanes, connections, BPMN_WIDTH =  drawio['bpmn_lanes'], drawio['connections'], drawio['BPMN_WIDTH']
+
     mxfile = ET.Element("mxfile", host="app.diagrams.net")
     diagram = ET.SubElement(mxfile, "diagram", name="Diagram 1", id="diagram1")
     mxGraphModel = ET.SubElement(diagram, "mxGraphModel", dx="1000", dy="1000", grid="1", gridSize="10", guides="1",
@@ -183,23 +187,56 @@ def generate_bpmn_drawio(diagram_name, bpmn_lanes, connections):
 
     return ET.tostring(mxfile, encoding="unicode", method="xml")
 
+# _def = diagrams.AGK_2025.d_10_01_supplier_operation
+
+import argparse
+import importlib
+import os
+import sys
 
 
-if __name__ == '__main__':
+def main(diagram_path):
+    # Преобразуем путь к файлу в путь к модулю
+    module_name = diagram_path.replace('/', '.').replace('\\', '.').rstrip('.py')
+    
+    try:
+        # Динамически импортируем модуль
+        diagram = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        print(f"Модуль '{module_name}' не найден. Проверьте правильность пути.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"** Ошибка при импорте модуля '{module_name}': {e}")
+        sys.exit(1)
 
-    import diagrams.AGK_2025.d_10_01_supplier_operation as diagram
+    # Проверяем наличие необходимых атрибутов в модуле
+    required_attributes = ['DIAGRAM_NAME', 'drawio']
+    for attr in required_attributes:
+        if not hasattr(diagram, attr):
+            print(f"Модуль '{module_name}' не содержит обязательного атрибута '{attr}'.")
+            sys.exit(1)
 
-    BPMN_WIDTH = diagram.BPMN_WIDTH
+    drawio = diagram.drawio
 
+    BPMN_WIDTH = drawio['BPMN_WIDTH']
+    
     diagram_header = diagram.DIAGRAM_NAME
+    
+    file_out = '\\'.join(module_name.split('.')[:-1] + [f"d_{diagram_header}.drawio"])
 
-    file_out = f"./diagrams/AGK_2025/d_{diagram_header}.drawio"
+    # Предполагается, что функция generate_bpmn_drawio определена где-то в коде
+    
+    xml_output = generate_bpmn_drawio(diagram_header, drawio)
 
-
-    xml_output = generate_bpmn_drawio(diagram_header, diagram.draw['bpmn_lanes'], diagram.draw['connections'])
-
+    os.makedirs(os.path.dirname(file_out), exist_ok=True)
     with open(file_out, "w", encoding="utf-8") as file:
         file.write(xml_output)
 
-    print(f"\n\nDraw.io [{file_out}]")
+    print(f"\n\nDraw.io файл создан: [{file_out}]")
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Генерация диаграммы из указанного модуля.")
+    parser.add_argument("diagram_path", type=str, help="Путь к файлу диаграммы (например, diagrams/AGK_2025/d_10_01_supplier_operation.py)")
+    args = parser.parse_args()
+    main(args.diagram_path)

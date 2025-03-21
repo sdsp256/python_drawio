@@ -2,6 +2,7 @@
 
 | Версия  | Дата       | Описание изменений                                     |
 |---------|------------|--------------------------------------------------------|
+| 0.09.02 | 2025-03-21 | Добавлен параметр для указания полного пути к фалу с описанием  |
 | 0.09.01 | 2025-03-21 | MVP. Добавлен каталог для хранение диаграмм на github. |
 | 0.09.00 | 2023-03-20 | Версия для Jupyter notebook                            |
 
@@ -23,17 +24,22 @@ git remote set-url origin git@github.com:sdsp256/python_drawio.git
 ```
 
 #### 02.1 send changes to github 
-```git push -u origin main```
+```
+git push -u origin main
+```
 
-#### 02.2 get changes for git
+#### 02.2 get changes from git
 ```
 git pull
 ```
 
 #### 3. run drawio gnerator 
+при запуске скрипта укажите полный путь к файлу с описанием 
 ```
-python main.py
+python main.py diagrams/AGK_2025/d_10_01_supplier_operation.py
 ```
+check for output filename constant DIAGRAM_NAME = "10.01 Sample Supplier operation"
+
 
 #### 4. create or modify diagram 
 create drawio in  ./diagrams - directory with diagram configure and result drawio files 

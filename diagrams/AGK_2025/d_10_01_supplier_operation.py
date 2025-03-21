@@ -1,18 +1,20 @@
 import styles
 Style = styles.Style()
 
-BPMN_WIDTH = "820"
 DIAGRAM_NAME = "10.01 Sample Supplier operation"
+BPMN_WIDTH = "820"
 
-draw = {
+drawio = {
+  "DIAGRAM_NAME": "10.01 Sample Supplier operation",
+  "BPMN_WIDTH":BPMN_WIDTH,
   "bpmn_lanes" : {
     "Supplier": {
         "geometry":    f"y=20; width={BPMN_WIDTH}; height=120;",
         "blocks":{
-            "Registration": 			"x=70",
+            "Registration": 			"x=70;label=Application",
             "Seting up integration":  	"x=270",
             "Setting up LPoints":		"x=470",
-            "Get reports":				"x=670",
+            "Get reports":				"x=670;label=Supplier BI",
         }
     },
 
@@ -28,7 +30,7 @@ draw = {
         "lane_params":"",
         "block_params":f"{Style.BLUE};label=QMS.LES",
         "blocks": {
-            "Manage Supplier":			"x=70;label=MDM;text=<br>(Scoring);fillColor=#ffe6cc",
+            "Manage Supplier":			"x=70;label=MDM;text=<br>(Scoring)",
             "Manage Logistic point":	"x=270;label=MDM",
             "Message processing":		"x=470;label=GATE",
             "LES BI & reports":			"x=670;label=BI",
